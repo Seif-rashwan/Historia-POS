@@ -375,7 +375,7 @@ class PurchaseInvoicePage(ctk.CTkFrame):
             d['qty'].focus()
         else:
             d['barcode'].configure(text_color="red")
-            messagebox.showerror("خطأ", "لم يتم العثور على الصنف!")
+            messagebox.showerror("Error", "Item not found!")
     
     def calc_row(self, d):
         try:
@@ -455,11 +455,11 @@ class PurchaseInvoicePage(ctk.CTkFrame):
             
             # Common Checks
             if not self.cart_items:
-                return messagebox.showerror("خطأ", "السلة فارغة")
+                return messagebox.showerror("Error", "Cart is empty")
             
             store_name = self.cb_store.get()
             store_res = self.db.fetch_one("SELECT id FROM stores WHERE name=?", (store_name,))
-            if not store_res: return messagebox.showerror("خطأ", "اختر المخزن")
+            if not store_res: return messagebox.showerror("Error", "Select a store")
             store_id = store_res[0]
 
             notes = self.txt_notes.get("1.0", "end").strip()
@@ -476,7 +476,7 @@ class PurchaseInvoicePage(ctk.CTkFrame):
                 mat_name = self.cb_mat_supplier.get().strip()
                 fac_name = self.cb_factory_supplier.get().strip()
                 if not mat_name or not fac_name:
-                    return messagebox.showerror("خطأ", "يجب تحديد مورد الخامات ومورد التصنيع")
+                    return messagebox.showerror("Error", "Material supplier and factory must be selected")
                 
                 mat_supp_id = get_supp_id(mat_name)
                 fac_supp_id = get_supp_id(fac_name)
@@ -484,17 +484,17 @@ class PurchaseInvoicePage(ctk.CTkFrame):
                 try:
                     mat_cost = float(self.ent_mat_cost.get() or 0)
                     lab_cost = float(self.ent_lab_cost.get() or 0)
-                except ValueError: return messagebox.showerror("خطأ", "الأرقام غير صحيحة")
+                except ValueError: return messagebox.showerror("Error", "Invalid numbers")
 
                 # CRITICAL FIX: Block negative values that could corrupt WAC
                 if mat_cost < 0 or lab_cost < 0:
-                    return messagebox.showerror("خطأ", "التكلفة لا يمكن أن تكون سالبة!")
+                    return messagebox.showerror("Error", "Cost cannot be negative!")
 
                 if mat_cost + lab_cost <= 0:
-                    return messagebox.showerror("خطأ", "يجب إدخال تكلفة الخامات أو التصنيع")
+                    return messagebox.showerror("Error", "Material or labor cost required")
 
                 total_qty = sum(float(i['qty'].get()) for i in self.cart_items)
-                if total_qty <= 0: return messagebox.showerror("خطأ", "الكمية الكلية صفر!")
+                if total_qty <= 0: return messagebox.showerror("Error", "Total quantity is zero!")
 
                 unit_mat = mat_cost / total_qty
                 unit_lab = lab_cost / total_qty
@@ -530,12 +530,12 @@ class PurchaseInvoicePage(ctk.CTkFrame):
             else:
                 # --- Standard Mode ---
                 supp_name = self.ent_supplier_name.get().strip()
-                if not supp_name: return messagebox.showerror("خطأ", "المورد مطلوب")
+                if not supp_name: return messagebox.showerror("Error", "Supplier required")
                 
                 # Phone Validation
                 phone = self.phone_var.get()
                 if len(phone) != 13:
-                    return messagebox.showerror("خطأ", "رقم الهاتف غير صحيح")
+                    return messagebox.showerror("Error", "Invalid phone number")
                 
                 supp_id = get_supp_id(supp_name, phone, self.ent_supplier_addr.get().strip())
                 self.db.execute("UPDATE suppliers SET phone=?, address=? WHERE id=?", 
@@ -567,13 +567,13 @@ class PurchaseInvoicePage(ctk.CTkFrame):
                     # WAC & Stock Update
                     self.apply_wac_and_stock(did, qty, price, store_id)
 
-            messagebox.showinfo("نجاح", "تم حفظ الفاتورة بنجاح")
+            messagebox.showinfo("Success", "Invoice saved successfully")
             if hasattr(self.controller, 'refresh_views'):
                  self.controller.refresh_views()
             self.reset_form()
 
         except Exception as e:
-            messagebox.showerror("خطأ", f"حدث خطأ أثناء الحفظ:\n{e}")
+            messagebox.showerror("Error", f"Save failed:\n{e}")
 
     def apply_wac_and_stock(self, item_id, new_qty, new_cost, store_id):
         """

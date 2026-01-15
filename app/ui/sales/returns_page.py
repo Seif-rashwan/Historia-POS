@@ -65,7 +65,7 @@ class ReturnPopup(ctk.CTkToplevel):
     def __init__(self, parent, invoice_id):
         super().__init__(parent)
         self.title(f"Process Return - Invoice #{invoice_id}")
-        self.geometry("900x650")
+        self.geometry("1000x650")
         self.db = DB()
         self.invoice_id = invoice_id
         self.grab_set()
@@ -95,7 +95,7 @@ class ReturnPopup(ctk.CTkToplevel):
         # Header Row
         h_frm = ctk.CTkFrame(self.scroll, fg_color="gray30", height=30)
         h_frm.pack(fill="x")
-        labels = [("Item Name", 250), ("Price", 80), ("Sold", 60), ("Prev Ret", 80), ("Return Qty", 100)]
+        labels = [("Item Name", 150), ("Color", 70), ("Size", 60), ("Design", 120), ("Price", 70), ("Sold", 50), ("Prev Ret", 70), ("Return Qty", 90)]
         for txt, w in labels:
             ctk.CTkLabel(h_frm, text=txt, width=w, font=("Arial", 11, "bold")).pack(side="left", padx=2)
             
@@ -158,31 +158,58 @@ class ReturnPopup(ctk.CTkToplevel):
             self.cb_safe.set(safes[0][1])
 
     def load_items(self):
-        items = self.db.fetch_all("""SELECT id.id, i.name, id.price, id.qty, IFNULL(id.returned_qty, 0) 
-                                     FROM invoice_details id 
-                                     JOIN item_details d ON id.item_detail_id = d.id 
-                                     JOIN items i ON d.item_id = i.id 
-                                     WHERE id.invoice_id = ?""", (self.invoice_id,))
+        # Fetch ALL details: item name, color, size, design (item_note), price, qty, returned_qty
+        items = self.db.fetch_all("""
+            SELECT 
+                id.id, 
+                i.name, 
+                c.name as color_name, 
+                s.name as size_name,
+                id.item_note,
+                id.price, 
+                id.qty, 
+                IFNULL(id.returned_qty, 0) 
+            FROM invoice_details id 
+            JOIN item_details d ON id.item_detail_id = d.id 
+            JOIN items i ON d.item_id = i.id 
+            LEFT JOIN colors c ON d.color_id = c.id
+            LEFT JOIN sizes s ON d.size_id = s.id
+            WHERE id.invoice_id = ?
+            ORDER BY id.id
+        """, (self.invoice_id,))
                                      
         for it in items:
-            detail_id, name, price, sold, ret = it
+            detail_id, name, color, size, item_note, price, sold, ret = it
             max_ret = sold - ret
             
             if max_ret > 0:
                 row = ctk.CTkFrame(self.scroll, height=35)
                 row.pack(fill="x", pady=1)
                 
-                ctk.CTkLabel(row, text=name, width=250, anchor="w", font=("Arial", 12)).pack(side="left", padx=2)
-                ctk.CTkLabel(row, text=f"{price}", width=80, font=("Arial", 12)).pack(side="left", padx=2)
-                ctk.CTkLabel(row, text=f"{sold}", width=60, font=("Arial", 12)).pack(side="left", padx=2)
-                ctk.CTkLabel(row, text=f"{ret}", width=80, text_color="orange", font=("Arial", 12)).pack(side="left", padx=2)
+                # Extract design name from item_note if it exists
+                design_name = "Plain"
+                if item_note and item_note.strip():
+                    # item_note format is " [Design Name]"
+                    design_name = item_note.strip()
+                    if design_name.startswith("[") and design_name.endswith("]"):
+                        design_name = design_name[1:-1]  # Remove brackets
                 
-                ent = ctk.CTkEntry(row, width=100, font=("Arial", 12))
+                # Display all details
+                ctk.CTkLabel(row, text=name, width=150, anchor="w", font=("Arial", 12)).pack(side="left", padx=2)
+                ctk.CTkLabel(row, text=color or "-", width=70, anchor="center", font=("Arial", 12)).pack(side="left", padx=2)
+                ctk.CTkLabel(row, text=size or "-", width=60, anchor="center", font=("Arial", 12)).pack(side="left", padx=2)
+                ctk.CTkLabel(row, text=design_name, width=120, anchor="w", font=("Arial", 12)).pack(side="left", padx=2)
+                ctk.CTkLabel(row, text=f"{price}", width=70, font=("Arial", 12)).pack(side="left", padx=2)
+                ctk.CTkLabel(row, text=f"{sold}", width=50, font=("Arial", 12)).pack(side="left", padx=2)
+                ctk.CTkLabel(row, text=f"{ret}", width=70, text_color="orange", font=("Arial", 12)).pack(side="left", padx=2)
+                
+                ent = ctk.CTkEntry(row, width=90, font=("Arial", 12))
                 ent.pack(side="left", padx=5)
                 ent.insert(0, "0")
                 ent.bind("<KeyRelease>", self.calc_total)
                 
                 self.return_entries.append({"id": detail_id, "price": price, "max": max_ret, "entry": ent})
+
 
     def calc_total(self, event=None):
         total = 0.0

@@ -119,15 +119,15 @@ class VouchersPage(ctk.CTkFrame):
     def save_voucher(self):
         try:
             amount = float(self.ent_amount.get())
-            if amount <= 0: return messagebox.showerror("خطأ", "يجب أن يكون المبلغ أكبر من صفر")
-        except: return messagebox.showerror("خطأ", "المبلغ غير صحيح")
+            if amount <= 0: return messagebox.showerror("Error", "Amount must be greater than zero")
+        except: return messagebox.showerror("Error", "Invalid amount")
         
         desc = self.ent_desc.get().strip()
-        if not desc: return messagebox.showerror("خطأ", "ادخل البيان أو السبب")
+        if not desc: return messagebox.showerror("Error", "Enter description or reason")
         
         safe_name = self.cb_safe.get()
         safe_res = self.db.fetch_one("SELECT id FROM safes WHERE name=?", (safe_name,))
-        if not safe_res: return messagebox.showerror("خطأ", "اختر الخزنة")
+        if not safe_res: return messagebox.showerror("Error", "Select safe")
         safe_id = safe_res[0]
         
         v_type = self.var_type.get()
@@ -146,10 +146,10 @@ class VouchersPage(ctk.CTkFrame):
         self.db.execute("INSERT INTO vouchers (date, voucher_type, safe_id, amount, description, customer_id, supplier_id) VALUES (?,?,?,?,?,?,?)",
                        (date.today(), v_type, safe_id, amount, desc, cust_id, supp_id))
         
-        messagebox.showinfo("نجاح", "تم حفظ السند بنجاح")
+        messagebox.showinfo("Success", "Voucher saved successfully")
         self.ent_amount.delete(0, "end")
         self.ent_desc.delete(0, "end")
-        messagebox.showinfo("نجاح", "تم حفظ السند بنجاح")
+        messagebox.showinfo("Success", "Voucher saved successfully")
         self.ent_amount.delete(0, "end")
         self.ent_desc.delete(0, "end")
         self.load_history()

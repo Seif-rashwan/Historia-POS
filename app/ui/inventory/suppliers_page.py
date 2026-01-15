@@ -54,7 +54,7 @@ class SuppliersPage(ctk.CTkFrame):
 
     def edit_supplier(self):
         sel = self.tree.selection()
-        if not sel: return messagebox.showerror(fix_text("خطأ"), fix_text("يرجى اختيار مورد من القائمة أولاً"))
+        if not sel: return messagebox.showerror("Error", "Please select a supplier first")
         item = self.tree.item(sel[0])
         record_id = item['values'][0]
         data = self.db.fetch_one("SELECT id, name, phone, address, email, notes FROM suppliers WHERE id=?", (record_id,))
@@ -63,16 +63,16 @@ class SuppliersPage(ctk.CTkFrame):
 
     def delete_supplier(self):
         sel = self.tree.selection()
-        if not sel: return messagebox.showerror(fix_text("خطأ"), fix_text("يرجى اختيار مورد أولاً"))
+        if not sel: return messagebox.showerror("Error", "Please select a supplier first")
         if messagebox.askyesno(fix_text("تأكيد الحذف"), fix_text("هل أنت متأكد من حذف هذا المورد؟")):
             try:
                 rec_id = self.tree.item(sel[0])['values'][0]
                 self.db.execute("DELETE FROM suppliers WHERE id=?", (rec_id,))
-                messagebox.showinfo(fix_text("تم"), fix_text("تم حذف المورد بنجاح"))
+                messagebox.showinfo("Success", "Supplier deleted successfully")
                 self.load()
                 if hasattr(self.controller, 'refresh_views'): self.controller.refresh_views()
             except Exception as e:
-                messagebox.showerror(fix_text("خطأ"), f"لا يمكن حذف المورد (قد يكون مرتبطاً بفواتير)\n\nالتفاصيل: {e}")
+                messagebox.showerror("Error", f"Cannot delete supplier (may be linked to invoices)\n\nDetails: {e}")
 
     def open_popup(self, title, data=None):
         pop = ctk.CTkToplevel(self)
@@ -99,13 +99,13 @@ class SuppliersPage(ctk.CTkFrame):
         
         def save():
             name = e_name.get().strip()
-            if not name: return messagebox.showerror(fix_text("خطأ"), fix_text("اسم المورد مطلوب"))
+            if not name: return messagebox.showerror("Error", "Supplier name required")
             vals = (name, e_phone.get().strip(), e_addr.get().strip(), e_email.get().strip(), e_notes.get("1.0", "end").strip())
             if data:
                 self.db.execute("UPDATE suppliers SET name=?, phone=?, address=?, email=?, notes=? WHERE id=?", vals + (data[0],))
             else:
                 self.db.execute("INSERT INTO suppliers (name, phone, address, email, notes) VALUES (?,?,?,?,?)", vals)
-            messagebox.showinfo(fix_text("نجاح"), fix_text("تم الحفظ بنجاح"))
+            messagebox.showinfo("Success", "Saved successfully")
             pop.destroy()
             self.load()
             if hasattr(self.controller, 'refresh_views'): self.controller.refresh_views()

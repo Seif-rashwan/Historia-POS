@@ -110,7 +110,7 @@ class PurchaseReturnPage(ctk.CTkFrame):
 
     def delete_return(self):
         sel = self.tree_hist.selection()
-        if not sel: return messagebox.showerror("خطأ", "اختر مرتجعاً للحذف")
+        if not sel: return messagebox.showerror("Error", "Select a return to delete")
         
         if not messagebox.askyesno("تأكيد", "هل أنت متأكد من حذف هذا المرتجع؟\nسيتم إعادة الكميات للمخزن وإلغاء الاسترداد."): return
         
@@ -176,7 +176,7 @@ class PurchaseReturnPage(ctk.CTkFrame):
 
     def delete_return(self):
         sel = self.tree_hist.selection()
-        if not sel: return messagebox.showerror("خطأ", "اختر مرتجعاً للحذف")
+        if not sel: return messagebox.showerror("Error", "Select a return to delete")
         
         if not messagebox.askyesno("تأكيد", "هل أنت متأكد من حذف هذا المرتجع؟\nسيتم استعادة الكميات للمخزن."): return
         

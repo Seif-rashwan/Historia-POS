@@ -136,7 +136,7 @@ class StockPage(ctk.CTkFrame):
     def bulk_update(self):
         if self.user_role != "Admin": return
         try: p = float(self.ent_bulk.get())
-        except: return messagebox.showerror(fix_text("خطأ"), fix_text("السعر غير صحيح"))
+        except: return messagebox.showerror("Error", "Invalid price")
         
         ids = [self.tree.item(i)['values'][0] for i in self.tree.get_children()]
         if not ids: return
@@ -144,16 +144,16 @@ class StockPage(ctk.CTkFrame):
         
         placeholders = ','.join('?' * len(ids))
         self.db.execute(f"UPDATE item_details SET sell_price = ? WHERE id IN ({placeholders})", [p] + ids)
-        messagebox.showinfo(fix_text("نجاح"), fix_text("تم تحديث الأسعار")); self.load()
+        messagebox.showinfo("Success", "Prices updated"); self.load()
         if hasattr(self.controller, 'refresh_views'): self.controller.refresh_views()
     
     def print_barcode(self):
         if not BARCODE_AVAILABLE or not REPORTLAB_AVAILABLE:
-            messagebox.showerror(fix_text("خطأ"), fix_text("مكتبات الباركود أو PDF غير مثبتة"))
+            messagebox.showerror("Error", "Barcode/PDF libraries not installed")
             return
         
         sel = self.tree.selection()
-        if not sel: return messagebox.showerror(fix_text("خطأ"), fix_text("يرجى اختيار صنف للطباعة"))
+        if not sel: return messagebox.showerror("Error", "Select item to print")
         
         item_id = self.tree.item(sel[0])['values'][0]
         sql = """SELECT d.barcode, i.name, d.sell_price, s.name 
@@ -164,14 +164,14 @@ class StockPage(ctk.CTkFrame):
                  WHERE d.id = ?
                  LIMIT 1"""
         res = self.db.fetch_one(sql, (item_id,))
-        if not res: return messagebox.showerror(fix_text("خطأ"), fix_text("لم يتم العثور على الصنف"))
+        if not res: return messagebox.showerror("Error", "Item not found")
         
-        barcode_val, item_name, price, store_name = res[0], res[1], res[2] or 0, res[3] or fix_text("غير محدد")
+        barcode_val, item_name, price, store_name = res[0], res[1], res[2] or 0, res[3] or "N/A"
         
         qty_popup = ctk.CTkToplevel(self)
-        qty_popup.title(("عدد الملصقات"))
+        qty_popup.title("Print Barcode Labels")
         qty_popup.geometry("300x150")
-        ctk.CTkLabel(qty_popup, text=fix_text("عدد الملصقات المطلوبة:"), font=("Segoe UI", 14)).pack(pady=20)
+        ctk.CTkLabel(qty_popup, text="Number of Labels:", font=("Segoe UI", 14)).pack(pady=20)
         ent_qty = ctk.CTkEntry(qty_popup, width=100, font=("Segoe UI", 14))
         ent_qty.pack(pady=10)
         ent_qty.insert(0, "1")
@@ -180,13 +180,13 @@ class StockPage(ctk.CTkFrame):
         def generate_labels():
             try:
                 qty = int(ent_qty.get())
-                if qty <= 0: return messagebox.showerror(fix_text("خطأ"), fix_text("العدد يجب أن يكون أكبر من صفر"))
+                if qty <= 0: return messagebox.showerror("Error", "Quantity must be greater than zero")
                 qty_popup.destroy()
                 self._generate_barcode_pdf(barcode_val, item_name, price, store_name, qty)
-            except ValueError: messagebox.showerror(fix_text("خطأ"), fix_text("الرجاء إدخال رقم صحيح"))
+            except ValueError: messagebox.showerror("Error", "Please enter a valid number")
         
         ent_qty.bind("<Return>", lambda e: generate_labels())
-        ctk.CTkButton(qty_popup, text=fix_text("طباعة"), command=generate_labels, fg_color="#27AE60", font=("Segoe UI", 14)).pack(pady=10)
+        ctk.CTkButton(qty_popup, text="PRINT", command=generate_labels, fg_color="#27AE60", font=("Segoe UI", 14)).pack(pady=10)
     
     def _generate_barcode_pdf(self, barcode_val, item_name, price, store_name, qty):
         try:
@@ -219,10 +219,10 @@ class StockPage(ctk.CTkFrame):
             for i in range(qty):
                 if i > 0 and i % 4 == 0: elements.append(Spacer(1, 20))
                 label_data = [
-                    [Paragraph(fix_text(store_name), normal_style)],
-                    [Paragraph(fix_text(item_name), title_style)],
+                    [Paragraph(store_name, normal_style)],
+                    [Paragraph(item_name, title_style)],
                     [RLImage(temp_barcode_path, width=80*mm, height=20*mm)],
-                    [Paragraph(f"{price:.2f} ج.م", normal_style)]
+                    [Paragraph(f"{price:.2f} EGP", normal_style)]
                 ]
                 label_table = Table(label_data, colWidths=label_width)
                 label_table.setStyle(TableStyle([
@@ -236,9 +236,9 @@ class StockPage(ctk.CTkFrame):
             
             doc.build(elements)
             os.remove(temp_barcode_path)
-            messagebox.showinfo(fix_text("تم"), fix_text(f"تم إنشاء {qty} ملصق بنجاح"))
+            messagebox.showinfo("Success", f"{qty} labels created")
         except Exception as e:
-            messagebox.showerror(fix_text("خطأ"), f"Error: {e}")
+            messagebox.showerror("Error", f"Error: {e}")
             if os.path.exists(temp_barcode_path): os.remove(temp_barcode_path)
 
     def delete_selected(self):
@@ -251,16 +251,16 @@ class StockPage(ctk.CTkFrame):
         used_purchase = self.db.fetch_one("SELECT 1 FROM purchase_details WHERE item_detail_id=?", (item_id,))
         
         if used_sales or used_purchase:
-            return messagebox.showerror(fix_text("خطأ"), fix_text("لا يمكن حذف هذا الصنف لأنه موجود في فواتير سابقة.\nيمكنك تعديل اسمه أو سعره بدلاً من ذلك."))
+            return messagebox.showerror("Error", "Cannot delete this item (used in invoices).\nYou can edit its name or price instead.")
             
         if not messagebox.askyesno(fix_text("تأكيد الحذف"), fix_text(f"هل أنت متأكد من حذف الصنف نهائياً؟")): return
             
         try:
             self.db.execute("DELETE FROM store_stock WHERE item_detail_id=?", (item_id,))
             self.db.execute("DELETE FROM item_details WHERE id=?", (item_id,))
-            messagebox.showinfo(fix_text("نجاح"), fix_text("تم الحذف بنجاح")); self.load()
+            messagebox.showinfo("Success", "Deleted successfully"); self.load()
             if hasattr(self.controller, 'refresh_views'): self.controller.refresh_views()
-        except Exception as e: messagebox.showerror(fix_text("خطأ"), f"Error: {e}")
+        except Exception as e: messagebox.showerror("Error", f"Error: {e}")
 
     def edit_selected(self):
         if self.user_role != "Admin": return
@@ -310,7 +310,7 @@ class StockPage(ctk.CTkFrame):
         def save():
             barcode = e_barcode.get().strip().upper() 
             name = e_name.get().strip()
-            if not barcode or not name: return messagebox.showerror(fix_text("خطأ"), fix_text("الباركود واسم الصنف حقول إجبارية!"))
+            if not barcode or not name: return messagebox.showerror("Error", "Barcode and item name are required!")
             
             try:
                 res = self.db.fetch_one("SELECT id FROM items WHERE name=?", (name,))
@@ -330,17 +330,17 @@ class StockPage(ctk.CTkFrame):
                 
                 if item_id:
                     conflict = self.db.fetch_one("SELECT id FROM item_details WHERE barcode=? AND id!=?", (barcode, item_id))
-                    if conflict: return messagebox.showerror(fix_text("خطأ"), fix_text("الباركود مستخدم لصنف آخر!"))
+                    if conflict: return messagebox.showerror("Error", "Barcode already used for another item!")
                     self.db.execute("""UPDATE item_details SET item_id=?, barcode=?, color_id=?, size_id=?, buy_price=?, sell_price=? WHERE id=?""", (i_id, barcode, c_id, s_id, cost, price, item_id))
-                    messagebox.showinfo(fix_text("نجاح"), fix_text("تم التعديل بنجاح"))
+                    messagebox.showinfo("Success", "Updated successfully")
                 else:
                     exists = self.db.fetch_one("SELECT id FROM item_details WHERE barcode=?", (barcode,))
-                    if exists: return messagebox.showerror(fix_text("خطأ"), fix_text("هذا الباركود مستخدم بالفعل!"))
+                    if exists: return messagebox.showerror("Error", "Barcode already exists!")
                     self.db.execute("""INSERT INTO item_details (item_id, barcode, color_id, size_id, buy_price, sell_price) VALUES (?, ?, ?, ?, ?, ?)""", (i_id, barcode, c_id, s_id, cost, price))
-                    messagebox.showinfo(fix_text("نجاح"), fix_text("تم إضافة الصنف بنجاح"))
+                    messagebox.showinfo("Success", "Item added successfully")
                 
                 pop.destroy(); self.load() 
                 if hasattr(self.controller, 'refresh_views'): self.controller.refresh_views()
-            except Exception as e: messagebox.showerror(fix_text("خطأ"), f"Error: {e}")
+            except Exception as e: messagebox.showerror("Error", f"Error: {e}")
 
         ctk.CTkButton(pop, text=fix_text("حفظ"), command=save, fg_color="#27AE60", font=self.AR_FONT).pack(pady=30, fill="x", padx=40)

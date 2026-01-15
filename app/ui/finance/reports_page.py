@@ -904,7 +904,7 @@ class ReportsPage(ctk.CTkFrame):
         elif report_type == fix_text("كشف حساب عميل"):
             customer_name = self.cb_customer.get().strip()
             if not customer_name:
-                messagebox.showerror(fix_text("خطأ"), fix_text("يرجى اختيار العميل"))
+                messagebox.showerror("Error", "Please select customer")
                 return
             
             self.current_columns = ["Date", "Type", "Reference", "Debit", "Credit", "Balance"]
@@ -912,7 +912,7 @@ class ReportsPage(ctk.CTkFrame):
             
             cust_res = self.db.fetch_one("SELECT id FROM customers WHERE name LIKE ?", (f"%{customer_name}%",))
             if not cust_res:
-                messagebox.showerror(fix_text("خطأ"), fix_text(f"لم يتم العثور على عميل باسم: {customer_name}"))
+                messagebox.showerror("Error", f"Customer not found: {customer_name}")
                 return
             
             cust_id = cust_res[0]
@@ -1088,4 +1088,4 @@ class ReportsPage(ctk.CTkFrame):
             messagebox.showinfo("Success", "PDF saved successfully!")
             
         except Exception as e:
-            messagebox.showerror(fix_text("خطأ في الطباعة"), f"{fix_text('تأكد من إغلاق الملف إذا كان مفتوحاً')}.\nError: {e}")
+            messagebox.showerror("Print Error", f"Make sure file is closed if open.\nError: {e}")

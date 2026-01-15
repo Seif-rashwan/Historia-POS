@@ -106,7 +106,7 @@ class PendingPage(ctk.CTkFrame):
     def settle_invoice(self, event=None):
         sel = self.tree.selection()
         if not sel:
-            messagebox.showerror("خطأ", "يرجى اختيار فاتورة أولاً")
+            messagebox.showerror("Error", "Please select an invoice first")
             return
         
         inv_id = self.tree.item(sel[0])['values'][0]
@@ -193,7 +193,7 @@ class PendingPage(ctk.CTkFrame):
         def confirm():
             try:
                 pay_now = float(ent_payment.get())
-                if pay_now <= 0: return messagebox.showerror("خطأ", "المبلغ يجب أن يكون أكبر من 0")
+                if pay_now <= 0: return messagebox.showerror("Error", "Amount must be greater than 0")
                 if pay_now > remaining:
                     if not messagebox.askyesno("تنبيه", "المبلغ أكبر من المتبقي. هل أنت متأكد؟"): return
                 
@@ -223,13 +223,13 @@ class PendingPage(ctk.CTkFrame):
                 # If user changes safe for the second payment, the FIRST payment's safe attribution is lost!
                 # This is a limitation of the current schema, but acceptable for now unless user complains.
                 
-                messagebox.showinfo("تم", "تم تسجيل الدفعة بنجاح")
+                messagebox.showinfo("Success", "Payment recorded successfully")
                 popup.destroy()
                 self.load_invoices()
                 if hasattr(self.controller, 'refresh_views'): self.controller.refresh_views()
                 
             except ValueError:
-                messagebox.showerror("خطأ", "أدخل رقماً صحيحاً")
+                messagebox.showerror("Error", "Enter a valid number")
         
         # Save Button
         ctk.CTkButton(popup, text="تأكيد الدفع (Save)", command=confirm, fg_color="#27AE60", font=("Arial", 14, "bold"), height=40).pack(pady=30, padx=20, fill="x")

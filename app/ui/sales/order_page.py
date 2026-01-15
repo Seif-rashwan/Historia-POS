@@ -209,7 +209,7 @@ class OrderPage(ctk.CTkFrame):
                     if old: current_stock += old[0]
                 if current_stock < req_qty:
                     error_messages.append(f"• {name}: Req {int(req_qty)} / Avail {int(current_stock)}")
-        if has_hd_design and not has_hoodie: return False, "❌ خطأ: لا يمكن بيع تصميم (HD) بدون وجود هودي في الفاتورة!"
+        if has_hd_design and not has_hoodie: return False, "❌ Error: Cannot sell HD design without a hoodie in the invoice!"
         if error_messages: return False, "Insufficient Stock for:\n" + "\n".join(error_messages)
         return True, None
 

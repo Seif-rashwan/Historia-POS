@@ -365,3 +365,19 @@ class ImportDataPage(ctk.CTkFrame):
             if path:
                 self.errors_df.to_excel(path, index=False)
                 messagebox.showinfo("Saved", "Error report saved successfully.")
+    
+    def reset_form(self):
+        """Reset the import page to initial state (called by HISTORIA button)"""
+        # Clear log
+        self.txt_log.delete("1.0", "end")
+        
+        # Reset progress and status
+        self.progress.set(0)
+        self.lbl_status.configure(text="Ready...")
+        
+        # Reset error button and data
+        self.btn_errors.configure(state="disabled", fg_color="gray", text="📥 Download Errors Report")
+        self.errors_df = None
+        
+        # Clear summary
+        self.lbl_summary.configure(text="")
