@@ -1,0 +1,10 @@
+customtkinter
+Pillow
+reportlab
+pandas
+openpyxl
+python-barcode
+matplotlib
+arabic-reshaper
+python-bidi
+pyinstaller
